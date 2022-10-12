@@ -1,0 +1,3 @@
+## Sprawozdanie z listy nr 1
+
+Z listy pierwszej opanowałem zagadnienia z zadania 1, 2, 3 ...
