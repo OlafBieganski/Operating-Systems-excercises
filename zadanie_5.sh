@@ -1,7 +1,7 @@
 #!/bin/bash
 # skrypt wysyłający maile o danej tresci do adresatów zapisanych
 # w pliku tekstowym podanym jako argument skryptu
-if [ -f $1 ] and [ -s $1]
+if [ -f $1 ]
 then
     while read -r line
     do
