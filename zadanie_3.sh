@@ -1,9 +1,9 @@
-for x in $@
+for x in "$@"
 do
-if [ -e $x ] && [ ! -d $x ]
+if [ -e "$x" ] && [ ! -d "$x" ]
 then
     echo "$x - plik istnieje"
-elif [ -d $x ]
+elif [ -d "$x" ]
 then
     echo "$x - katalog"
 else
