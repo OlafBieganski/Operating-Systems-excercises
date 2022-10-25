@@ -1,0 +1,4 @@
+- zapoznałem się z poleceniami systemu plików Unixa i pracy z katalogami
+- pozanłem pollecenia operacji na plikach
+- zaznajomiłem się z zasdami i aktualizacją prawa dostęu do plików i katalogów
+-  
