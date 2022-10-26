@@ -1,6 +1,6 @@
-##Sprawozdanie lista nr 2
+## Sprawozdanie lista nr 2
 
-#Zadanie 1
+# Zadanie 1
 
 ```bash
 #!/bin/bash
@@ -8,9 +8,9 @@ pgrep sshd > result.txt
 wc -w result.txt
 ```
 
-#Zadanie 2
+# Zadanie 2
 
-###Kod trzech skryptów do zadania 2
+### Kod trzech skryptów do zadania 2
 
 ```bash
 #!/bin/bash
@@ -29,7 +29,7 @@ sleep 100
 sleep 100
 ```
 
-#Zadanie 3
+# Zadanie 3
 
 ```bash
 #!/bin/bash
@@ -40,15 +40,26 @@ do
 	trap 'echo "Signal blocked" ' 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15
 done
 ```
-![zdjecie2](Images/zad \6)
+![zdjecie2](images/trap\ kill1.PNG)
+![zdjecie2](images/trap\ kill\ 2.PNG)
 
-#Zadanie 4
+# Zadanie 4
 
 ```bash
-
+#!/bin/bash
+while :
+do
+	sleep 4
+	date
+done
 ```
 
-#Zadanie 5
+![zdjecie2](images/zadanie\ 4\ efekt.PNG)
+![zdjecie2](images/zadanie\ 4\ kill.PNG)
+![zdjecie2](images/zad\ 4\ fg\ bg.PNG)
+zad 4 fg bg.PNG
+
+# Zadanie 5
 
 ```bash
 #!/bin/bash
