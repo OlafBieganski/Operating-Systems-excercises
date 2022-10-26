@@ -57,7 +57,8 @@ done
 ![zdjecie2](images/zadanie\ 4\ efekt.PNG)
 ![zdjecie2](images/zadanie\ 4\ kill.PNG)
 ![zdjecie2](images/zad\ 4\ fg\ bg.PNG)
-zad 4 fg bg.PNG
+
+>SIGCONT w swoim działąniu bardziej przypomina polecenie bg.
 
 # Zadanie 5
 
@@ -72,15 +73,15 @@ done | cat | cat
 
 >Po uruchomieniu powyższego skryptu i sprawdzeniu pokrewieństwa procesów na podstawie ich PID i PPID stwierdzamy, że proces /bin/bash ./zad5.sh jest rodzicem procesów cat wywoływanych w potoku.
 
-![zdjecie](Images/zad5)
+![zdjecie](images/zad5.PNG)
 
 #Zadanie 6
 
 >Pierwszeństwo w czytaniu z potoku ma pierwszy zainicjowany jako czytający go program. Reszta w odpowiedniej kolejności czeka, aż procesy będące pierwsze w kolejce skończą prace (czytanie z potoku). Kiedy proces piszący do potoku zakończy swoją prace, wszystkie procesy go czytające również zostaną zakończone. Podobnie, gdy proces po operacji pisania do potoku zobaczy, że procesy go czytające zakończyły prace, on również ją zakończy. Komuniakty były generwowane poprzez przekazanie STDIO programu cat do FIFO (> >>).
 
-![zdjecie2](Images/"zad6)
-![zdjecie3](Images/zad61)
-![zdjecie4](Images/zad61)
+![zdjecie2](images/zad6.PNG)
+![zdjecie3](images/zad61.PNG)
+![zdjecie4](images/zad62.PNG)
 
 #Zadanie 7
 
@@ -92,7 +93,7 @@ top -u olaf
 
 Za pomocą powyższych komend na komputerze odpalono 7 instancji skryptu zad7.sh w tym jedną z obniżonym priorytetem. Poleceniem top sprawdzono hierarchie przydzielania dostępu do CPU i zgodnie z oczekiwaniami zaobserwowano, że proces o obniżonym priorytecie ma do ich dyspozycji najmniej.
 
-![zdjecie4](Images/zad71)
+![zdjecie4](images/zad71.PNG)
 
 #Zadanie 8
 
