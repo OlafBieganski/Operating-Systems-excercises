@@ -75,7 +75,7 @@ done | cat | cat
 
 ![zdjecie](images/zad5.PNG)
 
-#Zadanie 6
+# Zadanie 6
 
 >Pierwszeństwo w czytaniu z potoku ma pierwszy zainicjowany jako czytający go program. Reszta w odpowiedniej kolejności czeka, aż procesy będące pierwsze w kolejce skończą prace (czytanie z potoku). Kiedy proces piszący do potoku zakończy swoją prace, wszystkie procesy go czytające również zostaną zakończone. Podobnie, gdy proces po operacji pisania do potoku zobaczy, że procesy go czytające zakończyły prace, on również ją zakończy. Komuniakty były generwowane poprzez przekazanie STDIO programu cat do FIFO (> >>).
 
@@ -83,7 +83,7 @@ done | cat | cat
 ![zdjecie3](images/zad61.PNG)
 ![zdjecie4](images/zad62.PNG)
 
-#Zadanie 7
+# Zadanie 7
 
 ```bash
 ./zad7.sh &
@@ -91,11 +91,11 @@ nice ./zad7.sh -n 10 &
 top -u olaf
 ```
 
-Za pomocą powyższych komend na komputerze odpalono 7 instancji skryptu zad7.sh w tym jedną z obniżonym priorytetem. Poleceniem top sprawdzono hierarchie przydzielania dostępu do CPU i zgodnie z oczekiwaniami zaobserwowano, że proces o obniżonym priorytecie ma do ich dyspozycji najmniej.
+>Za pomocą powyższych komend na komputerze odpalono 7 instancji skryptu zad7.sh w tym jedną z obniżonym priorytetem. Poleceniem top sprawdzono hierarchie przydzielania dostępu do CPU i zgodnie z oczekiwaniami zaobserwowano, że proces o obniżonym priorytecie ma do ich dyspozycji najmniej.
 
 ![zdjecie4](images/zad71.PNG)
 
-#Zadanie 8
+# Zadanie 8
 
 ```bash
 obiegans@panamint:~/SCR_lab_sem5/SCR_LAB_sr19/lista_3$ ulimit -u 2
@@ -113,7 +113,7 @@ obiegans@panamint:~/SCR_lab_sem5/SCR_LAB_sr19/lista_3$ ulimit -Hu 10
 -bash: ulimit: max user processes: cannot modify limit: Operation not permitted
 ```
 
-Początkowo ustawiono limit na maksymalnie dwa procesy. Zaskutkowało to brakiem mozliwości wykonania polecenia ls. Po obniżeniu limitu nie istniała również mozliwośc ponownego go zwiększenia. Prawdopodopnie konieczne są do tego uprawnienia superuser. Po wylogowaniu i ponownym zalogowaniu ustawienia ulimit wróciły do domyślnych.
+>Początkowo ustawiono limit na maksymalnie dwa procesy. Zaskutkowało to brakiem mozliwości wykonania polecenia ls. Po obniżeniu limitu nie istniała również mozliwośc ponownego go zwiększenia. Prawdopodopnie konieczne są do tego uprawnienia superuser. Po wylogowaniu i ponownym zalogowaniu ustawienia ulimit wróciły do domyślnych.
 
 ```bash
 obiegans@panamint:~$ ulimit -a
@@ -135,7 +135,7 @@ max user processes                  (-u) 500
 virtual memory              (kbytes, -v) unlimited
 file locks                          (-x) unlimited
 ```
-Następnie zmniejszono limit do 50 procesów i uruchomiono skrypt zad8.sh. W celu zatrzymania procesów należało wysłać sygnał kończący wszystkie procesy (kill -9 -1).
+>Następnie zmniejszono limit do 50 procesów i uruchomiono skrypt zad8.sh. W celu zatrzymania procesów należało wysłać sygnał kończący wszystkie procesy (kill -9 -1).
 
 ```bash
 #!/bin/bash
