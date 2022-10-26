@@ -126,5 +126,9 @@ file locks                          (-x) unlimited
 Następnie zmniejszono limit do 50 procesów i uruchomiono skrypt zad8.sh. W celu zatrzymania procesów należało wysłać sygnał kończący wszystkie procesy (kill -9 -1).
 
 ```bash
-
+#!/bin/bash
+while true
+do
+	./zad8.sh &
+done
 ```
