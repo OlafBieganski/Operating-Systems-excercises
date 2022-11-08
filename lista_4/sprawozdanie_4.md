@@ -105,7 +105,7 @@ top - u 1.1
 
 Poniżej widoczny jest terminal, z którego wysyłano sygnały do programu.
 
-```bash
+```sh
 olaf@LAPTOP-K5EHOLM7:~$ ps -u
 USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
 olaf         9  0.0  0.0  10788  5836 pts/0    Ss   17:53   0:00 -bash
