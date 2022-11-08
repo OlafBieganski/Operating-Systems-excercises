@@ -1,7 +1,7 @@
-# Sprawozdanie lista nr 3
+# Sprawozdanie lista nr 4
 
 ## Zadanie 1
-```bash
+```console
 olaf@LAPTOP-K5EHOLM7:~/scr-laboratorium/lista_4$ top
 top - 19:01:36 up  1:08,  0 users,  load average: 0.15, 0.03, 0.01
 Tasks:  27 total,   2 running,  25 sleeping,   0 stopped,   0 zombie
@@ -98,14 +98,14 @@ int main(){
 ```bash
 top -u [seconds].[tenths of seconds]
 #czyli dla 1.1 s
-top - u 1.1
+top -u 1.1
 ```
 
 ## Zadanie 2
 
 Poniżej widoczny jest terminal, z którego wysyłano sygnały do programu.
 
-```sh
+```console
 olaf@LAPTOP-K5EHOLM7:~$ ps -u
 USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
 olaf         9  0.0  0.0  10788  5836 pts/0    Ss   17:53   0:00 -bash
@@ -188,4 +188,191 @@ Blocking SIGUSR2.
 olaf@LAPTOP-K5EHOLM7:~/scr-laboratorium/lista_4$
 ```
 
+```c
+#include <time.h>
+#include <signal.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <unistd.h>
+
+void SIGTERM_HAND(int signum){
+    printf("Program terminated.\n");
+    exit(1);
+}
+
+void SIGUSR1_HAND(int signum){
+    printf("Program will continue.\n");
+}
+
+void SIGUSR2_HAND(int signum){
+    printf("Signal SIGUSR2 received.\n");
+}
+
+int main(){
+    int i = 0;
+
+    struct timespec rmtp, rqtp;
+    rqtp.tv_sec = 0;
+    rqtp.tv_nsec = 10000000;
+
+    signal(SIGALRM, SIG_IGN); // ignorowanie sygnały SIGALRM
+    signal(SIGTERM, SIGTERM_HAND); // reakcja na SIGTERM
+    signal(SIGUSR1, SIGUSR1_HAND); // reakcja na SIGUSR1
+    signal(SIGUSR2, SIGUSR2_HAND); // reakcja na SIGUSR2
+
+    sigset_t intmask;
+    if ((sigemptyset(&intmask) == -1) || (sigaddset(&intmask, SIGUSR2) == -1)){
+    perror("Failed to initialize the signal mask");
+    return 1;
+    }
+    printf("Blocking SIGUSR2.\n");
+    sigprocmask(SIG_BLOCK, &intmask, NULL);
+    while(1){
+        i++;
+        nanosleep(&rqtp, &rmtp);
+        if(i % 1000 == 0){ // co 1000 iteracji na chwile odblokowujemy sygnał SIGUSR2
+            sigprocmask(SIG_UNBLOCK, &intmask, NULL);
+            printf("Signal SIGUSR2 unblocked.\n");
+            sigprocmask(SIG_BLOCK, &intmask, NULL);
+            printf("Blocking SIGUSR2.\n");
+        }
+    }
+}
+```
+
 ##Zadanie 3
+
+System plików /proc pozwala nam na uzyskiwanie szeregu danych na temat działających procesów. By uzyskać dane o procesie należy dostac się do katalogu zgodnie ze schematem:
+```bash
+/proc/[PID procesu]
+```
+Poniżej przykładowa zawartość katalogu dla jednego z uruchomionych procesów:
+```bash
+olaf@LAPTOP-K5EHOLM7:/proc/1822$ ls
+arch_status  clear_refs       cpuset   fd       limits     mountinfo   ns             pagemap      sched      smaps_rollup  status   timerslack_ns
+attr         cmdline          cwd      fdinfo   map_files  mounts      oom_adj        personality  schedstat  stack         syscall  uid_map
+auxv         comm             environ  gid_map  maps       mountstats  oom_score      projid_map   setgroups  stat          task     wchan
+cgroup       coredump_filter  exe      io       mem        net         oom_score_adj  root         smaps      statm         timers
+```
+
+##Zadanie 4
+
+```c
+#include <time.h>
+#include <signal.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <unistd.h>
+
+void SIGTERM_HAND(int signum){
+    printf("Program will continue.\n");
+}
+
+int main(){
+    int i = 0;
+
+    struct timespec rmtp, rqtp;
+    rqtp.tv_sec = 0;
+    rqtp.tv_nsec = 10000000;
+
+    signal(SIGILL, SIG_IGN); // ignorowanie sygnały SIGILL
+    signal(SIGTERM, SIGTERM_HAND); // reakcja na SIGTERM
+
+    sigset_t intmask;
+    sigemptyset(&intmask);
+    sigaddset(&intmask, SIGUSR2);
+    sigaddset(&intmask, SIGUSR1);
+    sigaddset(&intmask, SIGINT);
+    sigaddset(&intmask, SIGALRM);
+    sigprocmask(SIG_BLOCK, &intmask, NULL);
+    while(1){
+        i++;
+        nanosleep(&rqtp, &rmtp);
+    }
+}
+```
+
+W celu wykonania polecenia z zadania 4 napisano powyższy program sig_blocked.c. W programie zadeklarowano pewne sygnały jako blokowane, jeden jako ignorowany i jeden jako przechwytywany. Następnie uruchomiono program, sprawdzono jego PID i otwarto odpowiedni plik /proc/$PID/status.
+
+```bash
+olaf@LAPTOP-K5EHOLM7:~/scr-laboratorium/lista_4$ ./sigb.out &
+[1] 2456
+olaf@LAPTOP-K5EHOLM7:~/scr-laboratorium/lista_4$ cd /proc/2456/
+olaf@LAPTOP-K5EHOLM7:/proc/2456$ cat status
+```
+
+W pliku /proc/2456/status kluczowe są poniższe wiersze:
+
+```bash
+SigBlk: 0000000000002a02
+SigIgn: 0000000200000008
+SigCgt: 0000000000004000
+```
+
+Na ich podstawie jesteśmy w stanie zidentyfikować blokowane, ignorowane i przechwytywane sygnały. Przeliczając wartości z hex do bin i czytajac bity od prawej otrzymujemy numery sygnałów znajdujących się w danej lini.
+
+>SigBlk: 0000000000002a02 -> 0010101000000010 -> SIGINT, SIGUSR1, SIGUSR2, SIGALRM
+SigIgn: 0000000200000008 -> 001000000000000000000000000000001000 -> SIGILL
+SigCgt: 0000000000004000 -> 0100000000000000 -> SIGALRM
+
+Co zgadza się z sygnałami zadeklarowanymi w programie sig_blocked.c.
+
+##Zadanie 5
+
+###Skrypt zad5.sh
+```bash
+#!/bin/bash
+while true
+do
+    echo "Komunikat"
+    sleep 5
+done | cat | wc -l
+```
+
+W pierwszej kolejności uruchamiamy skrypt zad5.sh i poleceniem ps -u odczytujemy PID procesów przez niego uruchomionych.
+
+```console
+olaf      1822  0.0  0.0   8620  1844 pts/0    S+   22:25   0:00 /bin/bash ./zad5.sh
+olaf      1823  0.0  0.0   7376   516 pts/0    S+   22:25   0:00 cat
+olaf      1824  0.0  0.0   7244   636 pts/0    S+   22:25   0:00 wc -l
+```
+Następnie W katalogu /proc odszukujemy odpowiedni folder dla naszych procesów i w podkatalogach fd sprawdzamy otwarte przez proces pliki. Widzimy, że proces ./zad5.sh pisze do potoku 'pipe:[773]', a proces wc -l z niego czyta. Odpowiednio wc -l pisze do 1 -> 'pipe:[774]', a cat z niego czyta. Na tej podstawie jesteśmy stwierdzić kolejność wywoływania poleceń w potoku. Plik /dev/pts/0 jest to terminal, w którym działa proces.
+```console
+olaf@LAPTOP-K5EHOLM7:/proc/1669$ cd /proc/1822
+olaf@LAPTOP-K5EHOLM7:/proc/1822$ ls
+arch_status  clear_refs       cpuset   fd       limits     mountinfo   ns             pagemap      sched      smaps_rollup  status   timerslack_ns
+attr         cmdline          cwd      fdinfo   map_files  mounts      oom_adj        personality  schedstat  stack         syscall  uid_map
+auxv         comm             environ  gid_map  maps       mountstats  oom_score      projid_map   setgroups  stat          task     wchan
+cgroup       coredump_filter  exe      io       mem        net         oom_score_adj  root         smaps      statm         timers
+olaf@LAPTOP-K5EHOLM7:/proc/1822$ cd fd
+olaf@LAPTOP-K5EHOLM7:/proc/1822/fd$ ls
+0  1  2
+olaf@LAPTOP-K5EHOLM7:/proc/1822/fd$ ls -l
+total 0
+lrwx------ 1 olaf olaf 64 Nov  8 22:28 0 -> /dev/pts/0
+l-wx------ 1 olaf olaf 64 Nov  8 22:28 1 -> 'pipe:[773]'
+lrwx------ 1 olaf olaf 64 Nov  8 22:28 2 -> /dev/pts/0
+olaf@LAPTOP-K5EHOLM7:/proc/1822/fd$ cd /proc/1823/fd
+olaf@LAPTOP-K5EHOLM7:/proc/1823/fd$ ls -l
+total 0
+lr-x------ 1 olaf olaf 64 Nov  8 22:29 0 -> 'pipe:[773]'
+l-wx------ 1 olaf olaf 64 Nov  8 22:29 1 -> 'pipe:[774]'
+lrwx------ 1 olaf olaf 64 Nov  8 22:29 2 -> /dev/pts/0
+olaf@LAPTOP-K5EHOLM7:/proc/1823/fd$ cd /proc/1824/fd
+olaf@LAPTOP-K5EHOLM7:/proc/1824/fd$ ls -l
+total 0
+lr-x------ 1 olaf olaf 64 Nov  8 22:30 0 -> 'pipe:[774]'
+lrwx------ 1 olaf olaf 64 Nov  8 22:30 1 -> /dev/pts/0
+lrwx------ 1 olaf olaf 64 Nov  8 22:30 2 -> /dev/pts/0
+olaf@LAPTOP-K5EHOLM7:/proc/1824/fd$
+```
+
+
+
+
+
+
+
+
+
+
