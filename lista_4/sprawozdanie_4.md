@@ -1,6 +1,6 @@
-## Sprawozdanie lista nr 3
+# Sprawozdanie lista nr 3
 
-# Zadanie 1
+## Zadanie 1
 ```bash
 olaf@LAPTOP-K5EHOLM7:~/scr-laboratorium/lista_4$ top
 top - 19:01:36 up  1:08,  0 users,  load average: 0.15, 0.03, 0.01
@@ -81,7 +81,6 @@ MiB Swap:   4096.0 total,   4096.0 free,      0.0 used.  11666.5 avail Mem
 
 ```c
 #include <time.h>
-#include<stdio.h>
 
 int main(){
     int i = 0;
@@ -102,3 +101,91 @@ top -u [seconds].[tenths of seconds]
 top - u 1.1
 ```
 
+## Zadanie 2
+
+Poniżej widoczny jest terminal, z którego wysyłano sygnały do programu.
+
+```bash
+olaf@LAPTOP-K5EHOLM7:~$ ps -u
+USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+olaf         9  0.0  0.0  10788  5836 pts/0    Ss   17:53   0:00 -bash
+olaf       131  0.0  0.0   2612   596 pts/1    Ss+  18:03   0:00 sh -c $VSC
+olaf       132  0.0  0.0   2612   532 pts/1    S+   18:03   0:00 sh /mnt/c/U
+olaf       137  0.0  0.0   2612   592 pts/1    S+   18:03   0:00 sh /home/ol
+olaf       141  0.1  0.6 943284 86036 pts/1    Sl+  18:03   0:13 /home/olaf/
+olaf       161  0.0  0.3 624636 48460 pts/1    Sl+  18:03   0:00 /home/olaf/
+olaf       717  0.0  0.3 589896 48396 pts/2    Ssl+ 18:50   0:01 /home/olaf/
+olaf       726  0.0  0.3 590572 47880 pts/3    Ssl+ 18:50   0:05 /home/olaf/
+olaf       733  0.0  0.3 966576 46336 pts/1    Sl+  18:50   0:00 /home/olaf/
+olaf       746  0.5  1.2 1015256 154724 pts/1  Sl+  18:50   0:37 /home/olaf/
+olaf       800  0.0  0.4 591860 55132 pts/1    Sl+  18:50   0:02 /home/olaf/
+olaf       827  0.1  0.3 1539716 45668 pts/1   Sl+  18:59   0:08 /home/olaf/
+olaf       864  0.0  0.1 5096912 19016 pts/1   Sl+  18:59   0:00 /home/olaf/
+olaf      1292  0.0  0.2 5096912 26904 pts/1   Sl+  20:00   0:01 /home/olaf/
+olaf      1431  0.0  0.0  10168  5104 pts/5    Ss   20:37   0:00 -bash
+olaf      1476  0.0  0.0   2492   576 pts/0    S+   20:43   0:00 ./a.out
+olaf      1477  0.0  0.0  10616  3380 pts/5    R+   20:43   0:00 ps -u
+olaf@LAPTOP-K5EHOLM7:~$ kill -12 1476
+olaf@LAPTOP-K5EHOLM7:~$ kill -SIGUSR1 1476
+olaf@LAPTOP-K5EHOLM7:~$ kill -SIGTERM 1476
+olaf@LAPTOP-K5EHOLM7:~$ ps -u
+USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+olaf         9  0.0  0.0  10788  5836 pts/0    Ss   17:53   0:00 -bash
+olaf       131  0.0  0.0   2612   596 pts/1    Ss+  18:03   0:00 sh -c $VSC
+olaf       132  0.0  0.0   2612   532 pts/1    S+   18:03   0:00 sh /mnt/c/U
+olaf       137  0.0  0.0   2612   592 pts/1    S+   18:03   0:00 sh /home/ol
+olaf       141  0.1  0.6 943592 87232 pts/1    Sl+  18:03   0:13 /home/olaf/
+olaf       161  0.0  0.3 624636 48460 pts/1    Sl+  18:03   0:00 /home/olaf/
+olaf       717  0.0  0.3 589896 48396 pts/2    Ssl+ 18:50   0:01 /home/olaf/
+olaf       726  0.0  0.3 590572 47880 pts/3    Ssl+ 18:50   0:05 /home/olaf/
+olaf       733  0.0  0.3 966576 46592 pts/1    Sl+  18:50   0:00 /home/olaf/
+olaf       746  0.5  1.2 1015256 154400 pts/1  Sl+  18:50   0:38 /home/olaf/
+olaf       800  0.0  0.4 591860 55132 pts/1    Sl+  18:50   0:02 /home/olaf/
+olaf       827  0.1  0.3 1539716 45668 pts/1   Sl+  18:59   0:08 /home/olaf/
+olaf       864  0.0  0.1 5096912 19016 pts/1   Sl+  18:59   0:00 /home/olaf/
+olaf      1292  0.0  0.2 5096912 26904 pts/1   Sl+  20:00   0:01 /home/olaf/
+olaf      1431  0.0  0.0  10168  5104 pts/5    Ss   20:37   0:00 -bash
+olaf      1478  0.1  0.0   2492   512 pts/0    S+   20:45   0:00 ./a.out
+olaf      1479  0.0  0.0  10616  3284 pts/5    R+   20:45   0:00 ps -u
+olaf@LAPTOP-K5EHOLM7:~$ kill -SIGALRM 1478
+```
+
+Poniżej widoczny jest terminal, w którym wykonywał sie program.
+
+```console
+olaf@LAPTOP-K5EHOLM7:~/scr-laboratorium/lista_4$ ./a.out
+Blocking SIGUSR2.
+Signal SIGUSR2 unblocked.
+Blocking SIGUSR2.
+Signal SIGUSR2 received.
+Signal SIGUSR2 unblocked.
+Blocking SIGUSR2.
+Signal SIGUSR2 unblocked.
+Blocking SIGUSR2.
+Program will continue.
+Signal SIGUSR2 unblocked.
+Blocking SIGUSR2.
+Signal SIGUSR2 unblocked.
+Blocking SIGUSR2.
+Signal SIGUSR2 unblocked.
+Blocking SIGUSR2.
+Program terminated.
+olaf@LAPTOP-K5EHOLM7:~/scr-laboratorium/lista_4$ ./a.out
+Blocking SIGUSR2.
+Signal SIGUSR2 unblocked.
+Blocking SIGUSR2.
+Signal SIGUSR2 unblocked.
+Blocking SIGUSR2.
+Signal SIGUSR2 unblocked.
+Blocking SIGUSR2.
+Signal SIGUSR2 unblocked.
+Blocking SIGUSR2.
+Signal SIGUSR2 unblocked.
+Blocking SIGUSR2.
+Signal SIGUSR2 unblocked.
+Blocking SIGUSR2.
+^C
+olaf@LAPTOP-K5EHOLM7:~/scr-laboratorium/lista_4$
+```
+
+##Zadanie 3
