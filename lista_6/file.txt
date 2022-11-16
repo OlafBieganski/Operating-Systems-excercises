@@ -1,0 +1,2 @@
+To jest zawartość pliku file.txt
+Druga linia.
