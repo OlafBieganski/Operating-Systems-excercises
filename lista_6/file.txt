@@ -1,2 +1,1 @@
-To jest zawartość pliku file.txt
-Druga linia.
+To jest zawartosc pliku file.txt

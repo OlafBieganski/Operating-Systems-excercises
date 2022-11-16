@@ -17,12 +17,10 @@ int main(int argc, char* argv[]){
     if(pid == 0){
         // Child process
         close(pipe_fd[1]);
-        char buf[1];
-        int nbyte;
-        do{
-            nbyte = read(pipe_fd[0], buf, 1);
-            printf("#%s#\n", buf);
-        } while(nbyte > 0);
+	char* prog_name = "/etc/alternatives/display";
+	char* args[] = {"/etc/alternatives/display", STDIN_FILENO, NULL};
+        dup2(pipe_fd[0], STDIN_FILENO);
+	execv(prog_name, args);
         close(pipe_fd[0]);
         exit(0);
     } else {
@@ -33,7 +31,6 @@ int main(int argc, char* argv[]){
         char buf;
         while(1){
             buf = fgetc(file);
-            //printf("$%s$", &buf);
             if(write(pipe_fd[1], &buf, 1) != 1) perror("Error: ");
             if(feof(file)) break;
         }
