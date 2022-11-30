@@ -31,7 +31,7 @@ int main(int argc, char* argv[]){
     char* usr_in = calloc(file_size, sizeof(char));
     printf("Provide input to the file (max %d characters): ", file_size-1);
     if(fgets(usr_in, file_size, stdin) == NULL){
-        printf("fgets error.");
+        printf("fgets error.\n");
         exit(4);
     }
     // swap file content with new starting from the beginning
