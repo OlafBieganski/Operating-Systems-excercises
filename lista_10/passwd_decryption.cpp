@@ -3,9 +3,12 @@
 #include <string.h>
 #include <vector>
 #include <fstream>
+#include <csignal>
 
-using namespace std;
+std::vector<std::string> dictionary;
+std::vector<std::string> hash;
 
+// function to peform conversion from char array to hash code array
 void bytes2md5(const char *data, int len, char *md5buf) {
 	EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
 	const EVP_MD *md = EVP_md5();
@@ -21,23 +24,32 @@ void bytes2md5(const char *data, int len, char *md5buf) {
 }
 
 int main(int argc, char* argv[]){
-    if (argc < 2)
-    {
-        perror("Argument 1 not specified. Filename required!\n");
-        exit(1);
-    }
+	std::string userInput;
+	std::ifstream file;
+	char *filename;
 
-    vector<string> dictionary;
-    vector<string> hash;
-    char *filename = argv[1];
-	std::ifstream file(filename);
-	string line;
-    if( file.is_open() ) {
-		while ( file ) {
-			getline (file, line);;
+	while(true){
+		std::getline(std::cin, userInput);
+		if(userInput == "q") break;
+		file.open(userInput, std::ios::out);
+		if(!file){
+			std::cout << "No file of such name in current directory."
+			 << std::endl;
+		}
+		else{
+
+		}
+
+	}
+	
+	std::string line;
+    if(file.is_open()) {
+		while(file) {
+			getline(file, line);
 			dictionary.push_back(line);
 		}
 	}
+
     char md5[33]; // 32 characters + null terminator
     for(int i = 0; i < dictionary.size(); i++){
       const char *word = dictionary[i].c_str();
@@ -49,3 +61,13 @@ int main(int argc, char* argv[]){
 
     return 0;
 }
+
+/*
+// Check if dictionary file is given
+    if (argc < 2)
+    {
+        cout << "Argument 1 not specified. Filename required!\n";
+        exit(-1);
+    }
+
+*/
