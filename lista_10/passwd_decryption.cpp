@@ -147,8 +147,8 @@ bool threadNoResult(){
 }
 
 void threadStartnewSearch(){
-	hash.pop_back();
-	emails.pop_back();
+	if(!hash.empty()) hash.pop_back();
+	if(!emails.empty()) emails.pop_back();
 	// start new search
 	passwdFound_mtx.lock();
 	passwdFound = false;
@@ -196,8 +196,19 @@ int main(int argc, char* argv[]){
 	while(true){
 		// input is handled in separate thread
 		while(!(isInput || passwdFound)){
-			if(threadNoResult())
+			if(threadNoResult() && !hash.empty()){
+				if(!emails.empty()){
+					std::cout << "No password was found for: "
+				 	 << emails.back() << std::endl;
+				}
+				stopThreads(threadArr);
 				threadStartnewSearch();
+			}
+			if(hash.empty() && threadNoResult()){
+				std::cout << "Passwords list's end reached."
+				 << " Enter new file name or \"q\" for exit." << std::endl;
+				while(!isInput);
+			}
 		}
 		// stop if q is input
 		if(readUserInput() == "q"){
@@ -236,20 +247,17 @@ int main(int argc, char* argv[]){
 			// read new hashed passwords to memory
 			std::string lineHash, lineEmail, trash;
 			if(passwdFile.is_open()) {
- 				while(passwdFile){
+ 				do{
 					passwdFile >> trash >> lineHash >> lineEmail;
 					std::getline(passwdFile, trash);
       				hash.push_back(lineHash);
 					emails.push_back(lineEmail);
-				}
+				}while(passwdFile);
 				std::cout << "Passwords and emails successfuly read to memory." << std::endl;
 				passwdFile.close();
 				//
 			}
-			for(const auto &x : hash) std::cout << x << std::endl;
-			for(const auto &x : emails) std::cout << x << std::endl;
 			// start thread to find passwords
-			passwdFound = false;
 			threadStartnewSearch();
 		}
 	}
