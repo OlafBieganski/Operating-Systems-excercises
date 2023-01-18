@@ -18,7 +18,7 @@ bool isInput = false;
 std::array<std::thread, THREAD_NR> threadArr;
 std::array<bool, THREAD_NR> thread_state;
 std::string userInput;
-std::mutex passwdFound_mtx, passwdPairs_mtx, userInput_mtx; 
+std::mutex passwdFound_mtx, passwdPairs_mtx, userInput_mtx, dict_mtx; 
 
 // function to peform conversion from char array to hash code array
 void bytes2md5(const char *data, int len, char *md5buf) {
@@ -85,43 +85,60 @@ void getInput(){
 enum class producerNR {zero, one, two};
 
 void producer1word(const std::string &_crrhash, producerNR _producer){
-	uint i = 0;
-	char md5[33]; // 32 characters + null terminator
-	while(continueFlag && !passwdFound &&  i < dictionary.size()){
-		std::string currWord = dictionary[i];
-		switch(_producer){
-			case producerNR::one:
-				currWord[0] = toupper(currWord[0]);
-				break;
-			case producerNR::two:
-				for(auto &letter : currWord)
-					letter = toupper(letter);
-				break;
+
+	for(const std::string &x : dictionary){
+
+		std::string word = mtx_protrd(dict_mtx, x);
+
+		// check all 1 digit pre and post combinations
+		for(int i = 0; i <= 9; i++){
+			auto prefix = std::to_string(i) + word;
+			//check fit
+			auto wordpost = word + std::to_string(i);
+			// check fit
+			for(int j = 0; j <= 9; j++){
+				auto preword = std::to_string(j) + wordpost;
+				//check fit
+			}
 		}
-		const char *word = currWord.c_str();
-		bytes2md5(word, strlen(word), md5);
-		if(md5 == _crrhash){
-			std::array<std::string, 3> newPswd = {currWord, _crrhash, emails.back()};
-			// protect with mutex
-			passwdPairs_mtx.lock();
-			passwdPairs.push_back(newPswd);
-			passwdPairs_mtx.unlock();
-			passwdFound_mtx.lock();
-			passwdFound = true;
-			passwdFound_mtx.unlock();
-			return;
+
+		// all pre and post 2 digit combinations
+		for(int i = 0; i <= 99; i++){
+			auto x = std::to_string(i);
+			if(i < 10) x = "0" + x;
+			auto prefix = x + word;
+			//check fit
+			auto wordpost = word + x;
+			// check fit
+			for(int j = 0; j <= 99; j++){
+				auto y = std::to_string(j);
+				if(j < 10) y = "0" + y;
+				auto preword = y + wordpost;
+				//check fit
+			}
 		}
-		i++;
+
+		// all pre and post 3 digit combinations
+		for(int i = 0; i <= 999; i++){
+			auto x = std::to_string(i);
+			if(i < 10) x = "00" + x;
+			if(i < 100) x = "0" + x;
+			auto prefix = x + word;
+			//check fit
+			auto wordpost = word + x;
+			// check fit
+			for(int j = 0; j <= 999; j++){
+				auto y = std::to_string(j);
+				if(j < 10) y = "0" + y;
+				if(j < 100) y = "0" + y;
+				auto preword = y + wordpost;
+				//check fit
+			}
+		}
 	}
-	// setting state as finished
-	for(auto &state : thread_state)
-		if(state == false){
-			state = true;
-			break;
-		}
 }
 
-void producer1(const std::string &_crrhash){
+void producer2word(const std::string &_crrhash){
 
 }
 
