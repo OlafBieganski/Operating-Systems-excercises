@@ -8,7 +8,7 @@
 #include <thread>
 #include <mutex>
 
-#define THREAD_NR 1
+#define THREAD_NR 3
 
 std::vector<std::string> dictionary, hash, emails;
 std::vector<std::array<std::string, 3>> passwdPairs; // first is pswd second hash, third email
@@ -47,7 +47,7 @@ void signalHandler(int sigcode ) {
 // perform mutex protected read of var
 template<typename T>
 const T mtx_protrd(std::mutex &mtx, const T &var){
-	const T temp;
+	T temp;
 	mtx.lock();
 	temp = var;
 	mtx.unlock();
@@ -82,6 +82,22 @@ void getInput(){
 	}
 }
 
+bool checkPswd(const std::string &currWord, const std::string &_crrhash){
+	char md5[33]; // 32 characters + null terminator
+	const char *word = currWord.c_str();
+	bytes2md5(word, strlen(word), md5);
+	if(md5 == _crrhash){
+		std::array<std::string, 3> newPswd = {currWord, _crrhash, emails.back()};
+		// protect with mutex
+		passwdPairs_mtx.lock();
+		passwdPairs.push_back(newPswd);
+		passwdPairs_mtx.unlock();
+		mtx_protwrt(passwdFound_mtx, passwdFound, true);
+		return true;
+	}
+	return false;
+}
+
 enum class producerNR {zero, one, two};
 
 void producer1word(const std::string &_crrhash, producerNR _producer){
@@ -90,15 +106,29 @@ void producer1word(const std::string &_crrhash, producerNR _producer){
 
 		std::string word = mtx_protrd(dict_mtx, x);
 
+		// change the processed word based on producer type
+		switch(_producer){
+			case producerNR::one:
+				word[0] = toupper(word[0]);
+				break;
+			case producerNR::two:
+				for(auto &letter : word)
+					letter = toupper(letter);
+				break;
+		}
+
+		if(checkPswd(word, _crrhash)) return;
+
 		// check all 1 digit pre and post combinations
 		for(int i = 0; i <= 9; i++){
 			auto prefix = std::to_string(i) + word;
-			//check fit
+			if(checkPswd(prefix, _crrhash)) return;
 			auto wordpost = word + std::to_string(i);
-			// check fit
+			if(checkPswd(wordpost, _crrhash)) return;
 			for(int j = 0; j <= 9; j++){
+				if(!continueFlag || passwdFound) return;
 				auto preword = std::to_string(j) + wordpost;
-				//check fit
+				if(checkPswd(preword, _crrhash)) return;
 			}
 		}
 
@@ -107,14 +137,15 @@ void producer1word(const std::string &_crrhash, producerNR _producer){
 			auto x = std::to_string(i);
 			if(i < 10) x = "0" + x;
 			auto prefix = x + word;
-			//check fit
+			if(checkPswd(prefix, _crrhash)) return;
 			auto wordpost = word + x;
-			// check fit
+			if(checkPswd(wordpost, _crrhash)) return;
 			for(int j = 0; j <= 99; j++){
+				if(!continueFlag || passwdFound) return;
 				auto y = std::to_string(j);
 				if(j < 10) y = "0" + y;
 				auto preword = y + wordpost;
-				//check fit
+				if(checkPswd(preword, _crrhash)) return;
 			}
 		}
 
@@ -124,18 +155,27 @@ void producer1word(const std::string &_crrhash, producerNR _producer){
 			if(i < 10) x = "00" + x;
 			if(i < 100) x = "0" + x;
 			auto prefix = x + word;
-			//check fit
+			if(checkPswd(prefix, _crrhash)) return;
 			auto wordpost = word + x;
-			// check fit
+			if(checkPswd(wordpost, _crrhash)) return;
 			for(int j = 0; j <= 999; j++){
+				if(!continueFlag || passwdFound) return;
 				auto y = std::to_string(j);
 				if(j < 10) y = "0" + y;
 				if(j < 100) y = "0" + y;
 				auto preword = y + wordpost;
-				//check fit
+				if(checkPswd(preword, _crrhash)) return;
 			}
 		}
 	}
+
+	// if no passwd found in this or other thread
+	// setting state as finished
+	for(auto &state : thread_state)
+		if(state == false){
+			state = true;
+			break;
+		}
 }
 
 void producer2word(const std::string &_crrhash){
@@ -167,14 +207,14 @@ void threadStartnewSearch(){
 	if(!hash.empty()) hash.pop_back();
 	if(!emails.empty()) emails.pop_back();
 	// start new search
-	passwdFound_mtx.lock();
-	passwdFound = false;
-	passwdFound_mtx.unlock();
+	mtx_protwrt(passwdFound_mtx, passwdFound, false);
 	//setting state as unfinished
 	for(auto &state : thread_state)
 		state = false;
 	// all threads' initialization
 	threadArr[0] = std::thread(producer1word, hash.back(), producerNR::zero);
+	threadArr[1] = std::thread(producer1word, hash.back(), producerNR::one);
+	threadArr[2] = std::thread(producer1word, hash.back(), producerNR::two);
 }
 
 int main(int argc, char* argv[]){
@@ -274,7 +314,7 @@ int main(int argc, char* argv[]){
 				passwdFile.close();
 				//
 			}
-			// start thread to find passwords
+			// start threads to find passwords
 			threadStartnewSearch();
 		}
 	}
