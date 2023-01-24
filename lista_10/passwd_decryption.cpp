@@ -16,7 +16,7 @@ bool passwdFound = false; // flags  for threads
 bool continueFlag = false;
 bool isInput = false;
 std::array<std::thread, THREAD_NR> threadArr;
-std::array<bool, THREAD_NR> thread_state;
+std::array<bool, THREAD_NR> thread_state; // inform if threads finished with no result
 std::string userInput;
 std::mutex passwdFound_mtx, passwdPairs_mtx, userInput_mtx, dict_mtx; 
 
@@ -203,14 +203,19 @@ bool threadNoResult(){
 	return !passwdFound;
 }
 
-void threadStartnewSearch(){
+void threadStartnewSearch(bool &_end_reached){
 	if(!hash.empty()) hash.pop_back();
 	if(!emails.empty()) emails.pop_back();
-	// start new search
+	// prepare to start new search
 	mtx_protwrt(passwdFound_mtx, passwdFound, false);
 	//setting state as unfinished
 	for(auto &state : thread_state)
 		state = false;
+	// if hash list empty finish searching
+	if(hash.empty()){
+		_end_reached = true;
+		return;
+	}
 	// all threads' initialization
 	threadArr[0] = std::thread(producer1word, hash.back(), producerNR::zero);
 	threadArr[1] = std::thread(producer1word, hash.back(), producerNR::one);
@@ -250,6 +255,9 @@ int main(int argc, char* argv[]){
 	// start user input handling thread
 	std::thread inputThread(getInput);
 
+	// variable for end of passwd list
+	bool end_reached = false;
+
 	while(true){
 		// input is handled in separate thread
 		while(!(isInput || passwdFound)){
@@ -259,9 +267,9 @@ int main(int argc, char* argv[]){
 				 	 << emails.back() << std::endl;
 				}
 				stopThreads(threadArr);
-				threadStartnewSearch();
+				threadStartnewSearch(end_reached);
 			}
-			if(hash.empty() && threadNoResult()){
+			if((hash.empty() && threadNoResult()) || end_reached){
 				std::cout << "Passwords list's end reached."
 				 << " Enter new file name or \"q\" for exit." << std::endl;
 				while(!isInput);
@@ -281,7 +289,7 @@ int main(int argc, char* argv[]){
 			std::cout << "The deciphered password is: " << passwdPairs.back()[0]
 			 << ". Associated email: " << passwdPairs.back()[2] << std::endl;
 			// start new search
-			threadStartnewSearch();
+			threadStartnewSearch(end_reached);
 		}
 		if(isInput) passwdFile.open(readUserInput(), std::ios::out);
 		if(!passwdFile && isInput){
@@ -312,10 +320,10 @@ int main(int argc, char* argv[]){
 				}while(passwdFile);
 				std::cout << "Passwords and emails successfuly read to memory." << std::endl;
 				passwdFile.close();
-				//
+				end_reached = false; // end not reached
 			}
 			// start threads to find passwords
-			threadStartnewSearch();
+			threadStartnewSearch(end_reached);
 		}
 	}
     return 0;
