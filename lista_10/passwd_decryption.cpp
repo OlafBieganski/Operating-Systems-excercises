@@ -39,6 +39,10 @@ void bytes2md5(const char *data, int len, char *md5buf) {
 void signalHandler(int sigcode ) {
 	std::cout << "Interrupt signal (" << sigcode << ") received.\n";
 	// signal reaction code
+	if(passwdPairs.empty()){
+		std::cout << "No password has been found so far.\n";
+		return;
+	}
 	for(const auto &arr : passwdPairs)
 		std::cout << "The deciphered password is: " << arr[0]
 		 << ". Associated email: " << arr[2] << std::endl;  
@@ -293,7 +297,7 @@ int main(int argc, char* argv[]){
 		}
 		if(isInput) passwdFile.open(readUserInput(), std::ios::out);
 		if(!passwdFile && isInput){
-			std::cout << "No file of such name in current directory."
+			std::cout << "No file of such name in current directory. Provide correct filename."
 			 << std::endl;
 			userInput_mtx.lock();
 			isInput = false;
@@ -318,7 +322,7 @@ int main(int argc, char* argv[]){
       				hash.push_back(lineHash);
 					emails.push_back(lineEmail);
 				}while(passwdFile);
-				std::cout << "Passwords and emails successfuly read to memory." << std::endl;
+				std::cout << "Passwords and emails successfuly read to memory. Starting new search." << std::endl;
 				passwdFile.close();
 				end_reached = false; // end not reached
 			}
