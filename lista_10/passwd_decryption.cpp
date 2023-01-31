@@ -9,7 +9,7 @@
 #include <mutex>
 #include <condition_variable>
 
-#define THREAD_NR 3 // number of searching threads
+#define THREAD_NR 5 // number of searching threads
 
 std::vector<std::string> dictionary, hash, emails;
 std::vector<std::array<std::string, 3>> passwdPairs; // first is pswd second hash, third email
@@ -22,6 +22,24 @@ std::array<bool, THREAD_NR> thread_state; // inform if threads finished with no 
 std::string userInput;
 std::mutex passwdFound_mtx, passwdPairs_mtx, userInput_mtx, dict_mtx, hashEmail_mtx, cont_mtx, threads_finished_mtx;
 std::condition_variable newPasswd_CV, newInput_CV, threadsFinished_CV;
+
+// sets thread's state as finished after work is done
+// and notify suitable thread if all have finished
+void threadSetState(){
+	// set state as work finished
+	for(auto &state : thread_state)
+		if(state == false){
+			state = true;
+			break;
+		}
+	// if still false values do not notify
+	for(auto &state : thread_state)
+		if(state == false) return;
+	// if all threads finished notify about it
+	std::unique_lock<std::mutex> lock(threads_finished_mtx);
+	threadsFinished = true;
+	threadsFinished_CV.notify_one();
+}
 
 // function to peform conversion from char array to hash code array
 void bytes2md5(const char *data, int len, char *md5buf) {
@@ -78,9 +96,9 @@ const std::string readUserInput(){
 
 void getInput(){
 	std::string tempInput;
-	std::cout << "Provide file with passwords or \"q\" for exit. \n";
 	while(userInput != "q"){
 		// get whole line from input
+		std::cout << "Provide file with passwords or \"q\" for exit. \n";
 		std::getline(std::cin, tempInput);
 		std::unique_lock<std::mutex> lock(userInput_mtx);
 		userInput = tempInput;
@@ -95,7 +113,7 @@ void checkPswd(const std::string &currWord){
 	char md5[33]; // 32 characters + null terminator
 	const char *word = currWord.c_str();
 	bytes2md5(word, strlen(word), md5);
-	for(auto it = hash.begin(); it != hash.end(); ){
+	for(auto it = hash.begin(); it != hash.end(); it++){ // nie bylo it++
 		if(*it == md5){
 			uint idx = std::distance(hash.begin(), it);
 			std::array<std::string, 3> newPswd = {currWord, hash[idx], emails[idx]};
@@ -128,83 +146,72 @@ std::array<std::string,16> symbols = {"0", "1", "2", "3", "4", "5", "6", "7", "8
  "!", "@", "#", "$", "%", "&"};
 
 //
-/*void producer1word(const std::string &_crrhash, producerNR _producer){
-
-	for(const std::string &x : dictionary){
-
-		std::string word = mtx_protrd(dict_mtx, x);
-
-		// change the processed word based on producer type
-		switch(_producer){
-			case producerNR::one:
-				word[0] = toupper(word[0]);
-				break;
-			case producerNR::two:
-				for(auto &letter : word)
-					letter = toupper(letter);
-				break;
-		}
-
-		if(checkPswd(word, _crrhash)) return;
-
-		// check all 1 digit pre and post combinations
-		for(int i = 0; i <= 9; i++){
-			auto prefix = std::to_string(i) + word;
-			if(checkPswd(prefix, _crrhash)) return;
-			auto wordpost = word + std::to_string(i);
-			if(checkPswd(wordpost, _crrhash)) return;
-			for(int j = 0; j <= 9; j++){
-				if(!continueFlag || passwdFound) return;
-				auto preword = std::to_string(j) + wordpost;
-				if(checkPswd(preword, _crrhash)) return;
-			}
-		}
-
-		// all pre and post 2 digit combinations
-		for(int i = 0; i <= 99; i++){
-			auto x = std::to_string(i);
-			if(i < 10) x = "0" + x;
-			auto prefix = x + word;
-			if(checkPswd(prefix, _crrhash)) return;
-			auto wordpost = word + x;
-			if(checkPswd(wordpost, _crrhash)) return;
-			for(int j = 0; j <= 99; j++){
-				if(!continueFlag || passwdFound) return;
-				auto y = std::to_string(j);
-				if(j < 10) y = "0" + y;
-				auto preword = y + wordpost;
-				if(checkPswd(preword, _crrhash)) return;
-			}
-		}
-
-		// all pre and post 3 digit combinations
-		for(int i = 0; i <= 999; i++){
-			auto x = std::to_string(i);
-			if(i < 10) x = "00" + x;
-			if(i < 100) x = "0" + x;
-			auto prefix = x + word;
-			if(checkPswd(prefix, _crrhash)) return;
-			auto wordpost = word + x;
-			if(checkPswd(wordpost, _crrhash)) return;
-			for(int j = 0; j <= 999; j++){
-				if(!continueFlag || passwdFound) return;
-				auto y = std::to_string(j);
-				if(j < 10) y = "0" + y;
-				if(j < 100) y = "0" + y;
-				auto preword = y + wordpost;
-				if(checkPswd(preword, _crrhash)) return;
-			}
-		}
-	}
-
-	// if no passwd found in this or other thread
-	// setting state as finished
-	for(auto &state : thread_state)
-		if(state == false){
-			state = true;
+void producer1word(digitPlace _digitPlace){
+	for(const std::string &y : dictionary){
+		// all possible letter size combinations for one word
+		if(!mtx_protrd(cont_mtx, continueFlag)) return;
+		std::string word = mtx_protrd(dict_mtx, y);
+		auto wordFUP = word;
+		wordFUP[0] = toupper(word[0]);
+		auto wordAUP = word;
+		for(auto &letter : wordAUP)
+		letter = toupper(letter);
+		// adding digits
+		switch(_digitPlace){
+			case digitPlace::noDigit: break;
+			case digitPlace::prefixDigit:
+				for(const auto &sym : symbols){
+					auto prefix1 = sym;
+					checkPswd(prefix1 + word);
+					checkPswd(prefix1 + wordFUP);
+					checkPswd(prefix1 + wordAUP);
+					for(const auto &sym2 : symbols){
+						if(!mtx_protrd(cont_mtx, continueFlag)) return;
+						auto prefix2 = prefix1 + sym2;
+						checkPswd(prefix2 + word);
+						checkPswd(prefix2 + wordFUP);
+						checkPswd(prefix2 + wordAUP);
+					}
+				}
+			break;
+			case digitPlace::postfixDigit:
+				for(const auto &sym : symbols){
+					auto postfix1 = sym;
+					checkPswd(word + postfix1);
+					checkPswd(wordFUP + postfix1);
+					checkPswd(wordAUP + postfix1);
+					for(const auto &sym2 : symbols){
+						if(!mtx_protrd(cont_mtx, continueFlag)) return;
+						auto postfix2 = postfix1 + sym2;
+						checkPswd(word + postfix2);
+						checkPswd(wordFUP + postfix2);
+						checkPswd(wordAUP + postfix2);
+					}
+				}
+			break;
+			case digitPlace::prePostDigit:
+				for(uint i = 0; i < 100; i++){
+					auto prefix = std::to_string(i);
+					for(uint i = 0; i < 100; i++){
+						if(!mtx_protrd(cont_mtx, continueFlag)) return;
+						auto postfix = std::to_string(i);
+						checkPswd(prefix + word  + postfix);
+						checkPswd(prefix + wordFUP + postfix);
+						checkPswd(prefix + wordAUP + postfix);
+					}
+				}
 			break;
 		}
-}*/
+		// check all three options
+		if(_digitPlace == digitPlace::noDigit){
+			checkPswd(word);
+			checkPswd(wordFUP);
+			checkPswd(wordAUP);
+		}
+	}
+	// setting state as finished with no result
+	threadSetState();
+}
 
 // possible check for 2 word passwd with all letter size cominations
 // and pre, post and middle additional numbers up to 2 symbols gigit and special signs combinations
@@ -230,44 +237,53 @@ void producer2word(producerNR _producer, digitPlace _digitPlace){
 			auto word2FUP = word2;
 			word2FUP[0] = toupper(word2[0]);
 			auto word2AUP = word2;
-			for(auto &letter : word2AUP)
+			for(char &letter : word2AUP)
 				letter = toupper(letter);
 			// adding digits
 			switch(_digitPlace){
 				case digitPlace::noDigit: break;
 				case digitPlace::prefixDigit:
-					for(auto &sym : symbols){
-						auto prefix = sym;
-						for(auto &sym2 : symbols){
+					for(const auto &sym : symbols){
+						std::string prefix1 = sym;
+						checkPswd(prefix1 + word1 + word2);
+						checkPswd(prefix1 + word1 + word2FUP);
+						checkPswd(prefix1 + word1 + word2AUP);
+						for(const auto &sym2 : symbols){
 							if(!mtx_protrd(cont_mtx, continueFlag)) return;
-							prefix = prefix + sym2;
-							checkPswd(prefix + word1 + word2);
-							checkPswd(prefix + word1 + word2FUP);
-							checkPswd(prefix + word1 + word2AUP);
+							std::string prefix2 = prefix1 + sym2;
+							checkPswd(prefix2 + word1 + word2);
+							checkPswd(prefix2 + word1 + word2FUP);
+							checkPswd(prefix2 + word1 + word2AUP);
 						}
 					}
 				break;
 				case digitPlace::postfixDigit:
-					for(auto &sym : symbols){
-						auto postfix = sym;
-						for(auto &sym2 : symbols){
+					for(const auto &sym : symbols){
+						std::string postfix1 = sym;
+						checkPswd(word1 + word2 + postfix1);
+						checkPswd(word1 + word2FUP + postfix1);
+						checkPswd(word1 + word2AUP + postfix1);
+						for(const auto &sym2 : symbols){
 							if(!mtx_protrd(cont_mtx, continueFlag)) return;
-							postfix = postfix + sym2;
-							checkPswd(word1 + word2 + postfix);
-							checkPswd(word1 + word2FUP + postfix);
-							checkPswd(word1 + word2AUP + postfix);
+							std::string postfix2 = postfix1 + sym2;
+							checkPswd(word1 + word2 + postfix2);
+							checkPswd(word1 + word2FUP + postfix2);
+							checkPswd(word1 + word2AUP + postfix2);
 						}
 					}
 				break;
 				case digitPlace::middleDigit:
-					for(auto &sym : symbols){
-						auto middle = sym;
-						for(auto &sym2 : symbols){
+					for(const auto &sym : symbols){
+						std::string middle1 = sym;
+						checkPswd(word1 + middle1 + word2);
+						checkPswd(word1 + middle1 + word2FUP);
+						checkPswd(word1 + middle1 + word2AUP);
+						for(const auto &sym2 : symbols){
 							if(!mtx_protrd(cont_mtx, continueFlag)) return;
-							middle = middle + sym2;
-							checkPswd(word1 + middle + word2);
-							checkPswd(word1 + middle + word2FUP);
-							checkPswd(word1 + middle + word2AUP);
+							std::string middle2 = middle1 + sym2;
+							checkPswd(word1 + middle2 + word2);
+							checkPswd(word1 + middle2 + word2FUP);
+							checkPswd(word1 + middle2 + word2AUP);
 						}
 					}
 				break;
@@ -285,12 +301,15 @@ void producer2word(producerNR _producer, digitPlace _digitPlace){
 				break;
 			}
 			// check all three options
-			if(_digitPlace != digitPlace::noDigit) break;
-			checkPswd(word1 + word2);
-			checkPswd(word1 + word2FUP);
-			checkPswd(word1 + word2AUP);
+			if(_digitPlace == digitPlace::noDigit){
+				checkPswd(word1 + word2);
+				checkPswd(word1 + word2FUP);
+				checkPswd(word1 + word2AUP);
+			}
 		}
 	}
+	// setting state as finished with no result
+	threadSetState();
 }
 
 template<std::size_t SIZE>
@@ -305,38 +324,18 @@ void stopThreads(std::array<std::thread, SIZE> &thArr){
 			threadArr[i].join();
 }
 
-bool threadNoResult(){
-	for(auto &state: thread_state)
-		if(!state) return false;
-	// if previously no found, we have no result
-	return !passwdFound;
-}
-
 // before use of this function you have to stop all running threads
 // and run utility threads
 void threadStartnewSearch(){
 	for(auto &state : thread_state) state = false;
-	threadArr[0] = std::thread(producer2word, producerNR::zero, digitPlace::prePostDigit);
-	//threadArr[1] = std::thread(producer2word, producerNR::one, digitPlace::prefixDigit);
-	//threadArr[2] = std::thread(producer2word, producerNR::two, digitPlace::postfixDigit);
-}
-
-// sets thread's state as finished after work is done
-// and notify suitable thread if all have finished
-void threadSetState(){
-	// set state as work finished
-	for(auto &state : thread_state)
-		if(state == false){
-			state = true;
-			break;
-		}
-	// if still false values do not notify
-	for(auto &state : thread_state)
-		if(state == false) return;
-	// if all threads finished notify about it
-	std::unique_lock<std::mutex> lock(threads_finished_mtx);
-	threadsFinished = true;
-	threadsFinished_CV.notify_one();
+	// remember to change THREAD_NR when adding new threads
+	threadArr[0] = std::thread(producer1word,digitPlace::noDigit);
+	threadArr[1] = std::thread(producer1word,digitPlace::prefixDigit);
+	threadArr[2] = std::thread(producer1word,digitPlace::postfixDigit);
+	threadArr[3] = std::thread(producer1word,digitPlace::prePostDigit);
+	threadArr[4] = std::thread(producer2word, producerNR::zero, digitPlace::prefixDigit);
+	//threadArr[5] = std::thread(producer2word, producerNR::two, digitPlace::postfixDigit);
+	//threadArr[6] = std::thread(producer2word, producerNR::one, digitPlace::prePostDigit);
 }
 
 void consumer(){
@@ -349,6 +348,7 @@ void consumer(){
 		if(!passwdFound){
 			newPasswd_CV.wait(lock);
 		}
+		if(!continueFlag) return;
 		std::cout << "The deciphered password is: " << passwdPairs.back()[0]
 			<< ". Associated email: " << passwdPairs.back()[2] << std::endl;
 		passwdFound = false;
@@ -409,7 +409,9 @@ int main(int argc, char* argv[]){
 			// before exit stop all threads
 			stopThreads(threadArr);
 			if(inputThread.joinable()) inputThread.join();
+			newPasswd_CV.notify_one();
 			if(consumerThread.joinable()) consumerThread.join();
+			threadsFinished_CV.notify_one();
 			if(informFinish.joinable()) informFinish.join();
 			break;
 		}
@@ -417,11 +419,14 @@ int main(int argc, char* argv[]){
 		if(!passwdFile){
 			std::cout << "No file of such name in current directory. Provide correct filename."
 			 << std::endl;
+			isInput = false;
 		}
 		if(passwdFile){
 			// stop threads' execution
 			stopThreads(threadArr);
+			newPasswd_CV.notify_one();
 			if(consumerThread.joinable()) consumerThread.join();
+			threadsFinished_CV.notify_one();
 			if(informFinish.joinable()) informFinish.join();
 			// clear data structures
 			hash.clear();
